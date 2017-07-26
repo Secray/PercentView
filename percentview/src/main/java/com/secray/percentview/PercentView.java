@@ -27,6 +27,7 @@ import java.io.IOException;
 public class PercentView extends View {
     private static final int DEFAULT_TEXT_SIZE = 100;
     private static final int DEFAULT_TITLE_SIZE = 14;
+    private static final String CHARACTOR_PERCENT = "%";
     // Default first color
     private static final int FIRST_COLOR = Color.parseColor("#0092cf");
     // Default second color
@@ -113,9 +114,6 @@ public class PercentView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (mText.length() >= 3) {
-            mTextSize = 86;
-        }
         if (mPercent == 0f) {
             mPercent = (float)(Integer.parseInt(mText)) / 100;
         }
@@ -125,7 +123,8 @@ public class PercentView extends View {
         float textWidth = mPaint.measureText(mText);
         float textHeight = fm.descent - fm.ascent;
 
-        float startX = getWidth() / 2 - textWidth / 2;
+        float startX = getWidth() / 2 - textWidth / 2
+                - mPercentPaint.measureText(CHARACTOR_PERCENT) / 2;
         float startY = textHeight / 2 + getHeight() / 2 - fm.descent;
 
 
@@ -148,7 +147,7 @@ public class PercentView extends View {
             drawText(canvas, mSecondColor, startX, startY, startX,
                     clipStartY, getWidth(), clipEndY);
         }
-        canvas.drawText("%", startX + textWidth, startY, mPercentPaint);
+        canvas.drawText(CHARACTOR_PERCENT, startX + textWidth, startY, mPercentPaint);
 
         if (mTitle != null && mTitle.length() != 0) {
             drawTitle(canvas, startY);
@@ -219,9 +218,14 @@ public class PercentView extends View {
                     Paint.FontMetricsInt fontMetrics = mPaint.getFontMetricsInt();
                     value = Math.abs((fontMetrics.bottom - fontMetrics.top));
                     measureSize = (int) value + getPaddingTop() + getPaddingBottom();
+                    if (mTitle != null && !"".equals(mTitle)) {
+                        fontMetrics = mTitlePaint.getFontMetricsInt();
+                        measureSize += Math.abs((fontMetrics.bottom - fontMetrics.top));
+                    }
                 } else {
                     value = mPaint.measureText(mText);
-                    measureSize = (int) value + getPaddingLeft() + getPaddingRight();
+                    measureSize = (int) (value + getPaddingLeft() + getPaddingRight()
+                     + mPercentPaint.measureText(CHARACTOR_PERCENT));
                 }
                 break;
         }
