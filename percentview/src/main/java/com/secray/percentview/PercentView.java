@@ -17,7 +17,6 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
-import java.io.IOException;
 
 /**
  * @author secray
@@ -25,36 +24,35 @@ import java.io.IOException;
  */
 
 public class PercentView extends View {
-    private static final int DEFAULT_TEXT_SIZE = 100;
-    private static final int DEFAULT_TITLE_SIZE = 14;
-    private static final String CHARACTOR_PERCENT = "%";
+    private static final int DEFAULT_TEXT_SIZE = 30;
+    private static final String CHARACTER_PERCENT = "%";
     // Default first color
     private static final int FIRST_COLOR = Color.parseColor("#0092cf");
     // Default second color
     private static final int SECOND_COLOR = Color.parseColor("#00f6ff");
-    private static final int TITLE_COLOR = Color.parseColor("#b3b6b9");
     // Direction top as default
     public static final int TOP = 1, BOTTOM = 0;
     // Typeface Normal as default
     public static final int NORMAL = 0, SANS = 1, SERIF = 2, MONOSPACE = 3;
 
+    public static final int GRAVITY_TOP = 0, GRAVITY_BOTTOM = 1,
+            GRAVITY_CENTER = 2, GRAVITY_LEFT = 3, GRAVITY_RIGHT = 4;
+
     private Paint mPaint;
     private Paint mPercentPaint;
-    private Paint mTitlePaint;
     private Rect mBound;
     private Context mContext;
 
     private String mText;
-    private String mTitle;
     private int mFirstColor;
     private int mSecondColor;
-    private int mTitleColor;
     private int mDirection;
+    private int mGravity;
     private int mTextSize;
-    private int mTitleSize;
     private Typeface mTypeface;
 
     private float mPercent = 0f;
+    private float mPadding;
 
     enum M {
         WIDTH,
@@ -81,12 +79,10 @@ public class PercentView extends View {
 
         mFirstColor = a.getColor(R.styleable.PercentView_firstColor, FIRST_COLOR);
         mSecondColor = a.getColor(R.styleable.PercentView_secondColor, SECOND_COLOR);
-        mTitleColor = a.getColor(R.styleable.PercentView_titleColor, TITLE_COLOR);
         mDirection = a.getInt(R.styleable.PercentView_direction, TOP);
         mTextSize = a.getDimensionPixelSize(R.styleable.PercentView_textSize, DEFAULT_TEXT_SIZE);
-        mTitleSize = a.getDimensionPixelSize(R.styleable.PercentView_titleSize, DEFAULT_TITLE_SIZE);
-        mText = a.getString(R.styleable.PercentView_text);
-        mTitle = a.getString(R.styleable.PercentView_title);
+        mGravity = a.getInt(R.styleable.PercentView_gravity, GRAVITY_CENTER);
+        mPercent = a.getFloat(R.styleable.PercentView_percent, 0f);
         int typeface = a.getInt(R.styleable.PercentView_typeface, NORMAL);
 
         a.recycle();
@@ -94,7 +90,8 @@ public class PercentView extends View {
         mContext = context;
         mTypeface = obtainTypeface(typeface);
         mBound = new Rect();
-
+        mText = (int)(mPercent * 100) + "";
+        mPadding = value2px(0.5f, VALUE.DP);
         initPaint();
     }
 
@@ -114,44 +111,54 @@ public class PercentView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (mPercent == 0f) {
-            mPercent = (float)(Integer.parseInt(mText)) / 100;
+
+        float textWidth = mPaint.measureText(mText);
+
+        float startX = (getMeasuredWidth() - textWidth
+                - mPercentPaint.measureText(CHARACTER_PERCENT)) / 2 + getPaddingLeft();
+        float startY = (0f + getMeasuredHeight() + Math.abs(mBound.height())) / 2 + getPaddingTop();
+        float clipStartY = (0f + getMeasuredHeight() - Math.abs(mBound.height())) / 2;
+        switch (mGravity) {
+            case GRAVITY_BOTTOM:
+                startY = getMeasuredHeight() - getPaddingBottom() - mPadding;
+                clipStartY = getMeasuredHeight() - Math.abs(mBound.height()) - 2 * mPadding;
+                break;
+            case GRAVITY_CENTER:
+                break;
+            case GRAVITY_TOP:
+                startY = getPaddingTop() + Math.abs(mBound.height()) + mPadding;
+                clipStartY = getPaddingTop();
+                break;
+            case GRAVITY_LEFT:
+                startX = getPaddingLeft();
+                Log.i("xk", "startY = " + startY + " " + clipStartY);
+                break;
+            case GRAVITY_RIGHT:
+                startX = getMeasuredWidth() - getPaddingRight() -
+                        mPaint.measureText(mText) - mPercentPaint.measureText(CHARACTER_PERCENT);
+                break;
         }
 
-
-        Paint.FontMetricsInt fm = mPaint.getFontMetricsInt();
-        float textWidth = mPaint.measureText(mText);
-        float textHeight = fm.descent - fm.ascent;
-
-        float startX = getWidth() / 2 - textWidth / 2
-                - mPercentPaint.measureText(CHARACTOR_PERCENT) / 2;
-        float startY = textHeight / 2 + getHeight() / 2 - fm.descent;
-
-
-        float clipStartY = getHeight() / 2 - mBound.height() / 2 - value2px(2.5f, VALUE.DP);
         float clipEndY;
-        float height = startY - clipStartY + value2px(1, VALUE.DP);
-
+        float height = Math.abs(mBound.height());
         if (mDirection == TOP) {
             clipEndY = clipStartY + height * mPercent;
             drawText(canvas, mFirstColor, startX, startY, startX,
-                    clipStartY, getWidth(), clipEndY);
+                    clipStartY, getMeasuredWidth(), clipEndY);
 
             drawText(canvas, mSecondColor, startX, startY, startX,
-                    clipEndY, getWidth(), startY + value2px(1, VALUE.DP));
+                    clipEndY, getMeasuredWidth(), startY + mPadding);
         } else if (mDirection == BOTTOM) {
             clipEndY = startY - height * mPercent;
             drawText(canvas, mFirstColor, startX, startY, startX,
-                    clipEndY, getWidth(), startY + value2px(1, VALUE.DP));
+                    clipEndY, getMeasuredWidth(), startY + mPadding);
 
             drawText(canvas, mSecondColor, startX, startY, startX,
-                    clipStartY, getWidth(), clipEndY);
+                    clipStartY, getMeasuredWidth(), clipEndY);
         }
-        canvas.drawText(CHARACTOR_PERCENT, startX + textWidth, startY, mPercentPaint);
-
-        if (mTitle != null && mTitle.length() != 0) {
-            drawTitle(canvas, startY);
-        }
+        canvas.drawText(CHARACTER_PERCENT, startX + textWidth, startY, mPercentPaint);
+        canvas.drawLine(0, getMeasuredHeight(), getMeasuredWidth(), getMeasuredHeight(), mPaint);
+        canvas.drawLine(0, clipStartY, getMeasuredWidth(), clipStartY, mPaint);
     }
 
     private void initPaint() {
@@ -159,10 +166,8 @@ public class PercentView extends View {
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setStyle(Paint.Style.FILL);
-        mPaint.setFakeBoldText(true);
         mPaint.setTypeface(mTypeface);
-        mPaint.setTextSize(value2px(mTextSize, VALUE.DP));
-        mPaint.getTextBounds(mText, 0, mText.length(), mBound);
+        mPaint.setTextSize(value2px(mTextSize, VALUE.SP));
 
         // init percent character paint
         mPercentPaint = new Paint();
@@ -171,17 +176,6 @@ public class PercentView extends View {
         mPercentPaint.setTypeface(mTypeface);
         mPercentPaint.setTextSize(value2px(mTextSize, VALUE.SP) * 4 / 25);
         mPercentPaint.setColor(mSecondColor);
-
-        // init title paint
-        mTitlePaint = new Paint();
-        mTitlePaint.setAntiAlias(true);
-        mTitlePaint.setStyle(Paint.Style.FILL);
-        mTitlePaint.setColor(mTitleColor);
-        mTitlePaint.setTextSize(value2px(mTitleSize, VALUE.SP));
-
-        if (mText == null) {
-            mText = "0";
-        }
     }
 
     private void drawText(Canvas canvas, int color,  float x, float y,
@@ -193,19 +187,11 @@ public class PercentView extends View {
         canvas.restore();
     }
 
-    private void drawTitle(Canvas canvas, float y) {
-        Paint.FontMetricsInt fm = mTitlePaint.getFontMetricsInt();
-        float titleWidth = mTitlePaint.measureText(mTitle);
-        float titleHeight = fm.descent - fm.ascent;
-
-        float x = getWidth() / 2 - titleWidth / 2;
-        canvas.drawText(mTitle, x, titleHeight + y + value2px(8, VALUE.DP), mTitlePaint);
-    }
-
     private int measureSize(M m, int measureSpec) {
         int measureSize = 0;
         int mode = MeasureSpec.getMode(measureSpec);
         int size = MeasureSpec.getSize(measureSpec);
+        mPaint.getTextBounds(mText, 0, mText.length(), mBound);
 
         switch (mode) {
             case MeasureSpec.EXACTLY:
@@ -215,17 +201,12 @@ public class PercentView extends View {
             case MeasureSpec.UNSPECIFIED:
                 float value;
                 if (m == M.HEIGHT) {
-                    Paint.FontMetricsInt fontMetrics = mPaint.getFontMetricsInt();
-                    value = Math.abs((fontMetrics.bottom - fontMetrics.top));
+                    value = Math.abs(mBound.height()) + 2 * mPadding;
                     measureSize = (int) value + getPaddingTop() + getPaddingBottom();
-                    if (mTitle != null && !"".equals(mTitle)) {
-                        fontMetrics = mTitlePaint.getFontMetricsInt();
-                        measureSize += Math.abs((fontMetrics.bottom - fontMetrics.top));
-                    }
                 } else {
                     value = mPaint.measureText(mText);
                     measureSize = (int) (value + getPaddingLeft() + getPaddingRight()
-                     + mPercentPaint.measureText(CHARACTOR_PERCENT));
+                            + mPercentPaint.measureText(CHARACTER_PERCENT));
                 }
                 break;
         }
@@ -263,6 +244,11 @@ public class PercentView extends View {
     public void setPercent(float percent) {
         mPercent = percent;
         mText = (int) (percent * 100) + "";
+        if (mText.length() >= 3) {
+            mTextSize = 86;
+            mPaint.setTextSize(value2px(mTextSize, VALUE.DP));
+        }
+        requestLayout();
         invalidate();
     }
 
@@ -276,12 +262,6 @@ public class PercentView extends View {
     public void setSecondColor(@ColorInt int secondColor) {
         this.mSecondColor = secondColor;
         mPercentPaint.setColor(secondColor);
-        invalidate();
-    }
-
-    @MainThread
-    public void setTitleColor(@ColorInt int titleColor) {
-        mTitlePaint.setColor(titleColor);
         invalidate();
     }
 
@@ -327,6 +307,7 @@ public class PercentView extends View {
      */
     public void setTypeface(int typeface) {
         mPaint.setTypeface(obtainTypeface(typeface));
+        mPercentPaint.setTypeface(obtainTypeface(typeface));
         requestLayout();
         invalidate();
     }

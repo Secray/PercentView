@@ -1,6 +1,8 @@
 package com.secray.sample;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -9,7 +11,14 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.secray.percentview.PercentView;
+
+import java.lang.ref.WeakReference;
+
 public class MainActivity extends AppCompatActivity {
+    private PercentView mPercentView;
+    private final MyHandler mHandler = new MyHandler(this);
+    private float mCurrent = 0f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -17,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mPercentView = (PercentView) findViewById(R.id.percent);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -26,6 +37,23 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        //mHandler.sendEmptyMessageDelayed(0, 1000);
+    }
+
+    public void setPercent() {
+        if (mCurrent == 1f) {
+            mCurrent = 0f;
+        } else {
+            mCurrent += 0.1f;
+        }
+        mPercentView.setPercent(mCurrent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mHandler.removeCallbacksAndMessages(null);
     }
 
     @Override
@@ -48,5 +76,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private static class MyHandler extends Handler {
+        WeakReference<MainActivity> mActivity;
+        public MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            mActivity.get().setPercent();
+            sendEmptyMessageDelayed(0, 1000);
+        }
     }
 }
