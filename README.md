@@ -3,22 +3,22 @@ A custom view for percent, you can use it for loading or some app for phone test
 
 [![](https://jitpack.io/v/Secray/PercentView.svg)](https://jitpack.io/#Secray/PercentView)
 
-# Add it in your root build.gradle at the end of repositories:
+### Add it in your root build.gradle at the end of repositories:
 
 ```
-	allprojects {
-		repositories {
-			...
-			maven { url 'https://jitpack.io' }
-		}
+allprojects {
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
 	}
+}
 ```
 
-# Add the dependency
+### Add the dependency
 
 ```
-	dependencies {
-	        compile 'com.github.Secray:PercentView:master-SNAPSHOT'
-	}
+dependencies {
+	compile 'com.github.Secray:PercentView:master-SNAPSHOT'
+}
 
 ```
