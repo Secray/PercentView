@@ -41,6 +41,7 @@ public class PercentView extends View {
     private Paint mPaint;
     private Paint mPercentPaint;
     private Rect mBound;
+    private Rect mPercentBound;
     private Context mContext;
 
     private String mText;
@@ -90,6 +91,7 @@ public class PercentView extends View {
         mContext = context;
         mTypeface = obtainTypeface(typeface);
         mBound = new Rect();
+        mPercentBound = new Rect();
         mText = (int)(mPercent * 100) + "";
         mPadding = value2px(0.5f, VALUE.DP);
         initPaint();
@@ -113,52 +115,61 @@ public class PercentView extends View {
         super.onDraw(canvas);
 
         float textWidth = mPaint.measureText(mText);
+        float textHeight = Math.abs(mBound.height());
+        float height = getMeasuredHeight();
+        float percentWidth = mPercentPaint.measureText(CHARACTER_PERCENT);
 
-        float startX = (getMeasuredWidth() - textWidth
-                - mPercentPaint.measureText(CHARACTER_PERCENT)) / 2 + getPaddingLeft();
-        float startY = (0f + getMeasuredHeight() + Math.abs(mBound.height())) / 2 + getPaddingTop();
-        float clipStartY = (0f + getMeasuredHeight() - Math.abs(mBound.height())) / 2;
+        float startX = (height - textWidth
+                - percentWidth) / 2 + getPaddingLeft();
+        float startY = (0f + height + textHeight) / 2 + getPaddingTop();
+        float clipStartY = (0f + height - textHeight) / 2;
         switch (mGravity) {
             case GRAVITY_BOTTOM:
-                startY = getMeasuredHeight() - getPaddingBottom() - mPadding;
-                clipStartY = getMeasuredHeight() - Math.abs(mBound.height()) - 2 * mPadding;
+                startY = height - getPaddingBottom() - mPadding;
+                clipStartY = height - textHeight - 2 * mPadding;
                 break;
             case GRAVITY_CENTER:
                 break;
             case GRAVITY_TOP:
-                startY = getPaddingTop() + Math.abs(mBound.height()) + mPadding;
+                startY = getPaddingTop() + textHeight + mPadding;
                 clipStartY = getPaddingTop();
                 break;
             case GRAVITY_LEFT:
                 startX = getPaddingLeft();
-                Log.i("xk", "startY = " + startY + " " + clipStartY);
                 break;
             case GRAVITY_RIGHT:
-                startX = getMeasuredWidth() - getPaddingRight() -
-                        mPaint.measureText(mText) - mPercentPaint.measureText(CHARACTER_PERCENT);
+                startX = height - getPaddingRight() -
+                        textHeight - percentWidth;
                 break;
         }
 
-        float clipEndY;
-        float height = Math.abs(mBound.height());
-        if (mDirection == TOP) {
-            clipEndY = clipStartY + height * mPercent;
-            drawText(canvas, mFirstColor, startX, startY, startX,
-                    clipStartY, getMeasuredWidth(), clipEndY);
+        float clipEndY = 0;
+        switch (mDirection) {
+            case TOP:
+                clipEndY = clipStartY + textHeight * mPercent;
+                drawText(canvas, mFirstColor, startX, startY, startX,
+                        clipStartY, getMeasuredWidth(), clipEndY);
 
-            drawText(canvas, mSecondColor, startX, startY, startX,
-                    clipEndY, getMeasuredWidth(), startY + mPadding);
-        } else if (mDirection == BOTTOM) {
-            clipEndY = startY - height * mPercent;
-            drawText(canvas, mFirstColor, startX, startY, startX,
-                    clipEndY, getMeasuredWidth(), startY + mPadding);
+                drawText(canvas, mSecondColor, startX, startY, startX,
+                        clipEndY, getMeasuredWidth(), startY + mPadding);
+                break;
+            case BOTTOM:
+                clipEndY = startY - textHeight * mPercent;
+                drawText(canvas, mSecondColor, startX, startY, startX,
+                        clipEndY, getMeasuredWidth(), startY + mPadding);
 
-            drawText(canvas, mSecondColor, startX, startY, startX,
-                    clipStartY, getMeasuredWidth(), clipEndY);
+                drawText(canvas, mFirstColor, startX, startY, startX,
+                        clipStartY, getMeasuredWidth(), clipEndY);
+                break;
         }
+
+        if (startY - clipEndY >= Math.abs(mPercentBound.height())) {
+            mPercentPaint.setColor(mSecondColor);
+        } else {
+            mPercentPaint.setColor(mFirstColor);
+        }
+
         canvas.drawText(CHARACTER_PERCENT, startX + textWidth, startY, mPercentPaint);
-        canvas.drawLine(0, getMeasuredHeight(), getMeasuredWidth(), getMeasuredHeight(), mPaint);
-        canvas.drawLine(0, clipStartY, getMeasuredWidth(), clipStartY, mPaint);
     }
 
     private void initPaint() {
@@ -175,7 +186,6 @@ public class PercentView extends View {
         mPercentPaint.setStyle(Paint.Style.FILL);
         mPercentPaint.setTypeface(mTypeface);
         mPercentPaint.setTextSize(value2px(mTextSize, VALUE.SP) * 4 / 25);
-        mPercentPaint.setColor(mSecondColor);
     }
 
     private void drawText(Canvas canvas, int color,  float x, float y,
@@ -192,6 +202,8 @@ public class PercentView extends View {
         int mode = MeasureSpec.getMode(measureSpec);
         int size = MeasureSpec.getSize(measureSpec);
         mPaint.getTextBounds(mText, 0, mText.length(), mBound);
+        mPercentPaint.getTextBounds(CHARACTER_PERCENT, 0,
+                CHARACTER_PERCENT.length(), mPercentBound);
 
         switch (mode) {
             case MeasureSpec.EXACTLY:
@@ -214,7 +226,8 @@ public class PercentView extends View {
     }
 
     private float value2px(float value, VALUE v) {
-        return TypedValue.applyDimension(v == VALUE.DP ? TypedValue.COMPLEX_UNIT_DIP : TypedValue.COMPLEX_UNIT_SP,
+        return TypedValue.applyDimension(v == VALUE.DP
+                        ? TypedValue.COMPLEX_UNIT_DIP : TypedValue.COMPLEX_UNIT_SP,
                 value, mContext.getResources().getDisplayMetrics());
     }
 
@@ -283,6 +296,7 @@ public class PercentView extends View {
     @MainThread
     public void setTextSize(int textSize) {
         mPaint.setTextSize(textSize);
+        mPercentPaint.setTextSize(textSize * 4 / 25);
         requestLayout();
         invalidate();
     }
