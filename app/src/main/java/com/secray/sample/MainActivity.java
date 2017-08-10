@@ -38,14 +38,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        //mHandler.sendEmptyMessageDelayed(0, 1000);
+        mHandler.sendEmptyMessageDelayed(0, 1000);
     }
 
     public void setPercent() {
-        if (mCurrent == 1f) {
+        if (mCurrent >= 1.0f) {
             mCurrent = 0f;
         } else {
-            mCurrent += 0.1f;
+            mCurrent += 0.01f;
         }
         mPercentView.setPercent(mCurrent);
     }

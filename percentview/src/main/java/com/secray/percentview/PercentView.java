@@ -117,9 +117,10 @@ public class PercentView extends View {
         float textWidth = mPaint.measureText(mText);
         float textHeight = Math.abs(mBound.height());
         float height = getMeasuredHeight();
+        float width = getMeasuredWidth();
         float percentWidth = mPercentPaint.measureText(CHARACTER_PERCENT);
 
-        float startX = (height - textWidth
+        float startX = (width - textWidth
                 - percentWidth) / 2 + getPaddingLeft();
         float startY = (0f + height + textHeight) / 2 + getPaddingTop();
         float clipStartY = (0f + height - textHeight) / 2;
@@ -138,7 +139,7 @@ public class PercentView extends View {
                 startX = getPaddingLeft();
                 break;
             case GRAVITY_RIGHT:
-                startX = height - getPaddingRight() -
+                startX = width - getPaddingRight() -
                         textHeight - percentWidth;
                 break;
         }
